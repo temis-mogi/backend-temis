@@ -11,6 +11,7 @@
     },
     "dependencies": {
         "@cloudant/cloudant": "^3.0.1",
+        "@google-cloud/speech": "^2.2.0",
         "async": "^2.6.1",
         "bluebird": "^3.5.3",
         "body-parser": "^1.18.3",
