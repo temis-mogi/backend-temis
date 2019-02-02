@@ -3,7 +3,11 @@
     "main": "dist/bundle.js",
     "scripts": {
         "build": "webpack --config webpack.config.js",
-        "deploy": "ibmcloud fn action update main dist/bundle.js --kind nodejs:8"
+        "deploy": "ibmcloud fn action update main dist/bundle.js --kind nodejs:6",
+        "start": "node index.js"
+    },
+    "engines": {
+        "node": "6.*"
     },
     "dependencies": {
         "@cloudant/cloudant": "^3.0.1",

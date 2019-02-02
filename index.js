@@ -101,9 +101,11 @@ app.post('/call/veracity/:_id/:veracity', function (req, res) {
 
 
 
-app.listen(3000, function () {
-    console.log('Example app listening on port 3000!');
+var port = process.env.PORT || 3000
+app.listen(port, function () {
+    console.log("To view your app, open this link in your browser: http://localhost:" + port);
 });
+
 
 function insert(params, ddoc) {
     return new Promise(function (resolve, reject) {
