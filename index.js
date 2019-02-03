@@ -182,15 +182,15 @@ function insert(params, ddoc) {
 
                     let priority = 0;
                     if (countDistance > 5) {
-                        priority = 3;
+                        priority = "2";
                     } else if (countDistance > 3 && countDistance <= 5) {
-                        priority = 2;
+                        priority = "1";
                     } else {
-                        priority = 1;
+                        priority = "0";
                     }
 
                     ddoc.priority = priority;
-                    ddoc.status = 0;
+                    ddoc.status = "0";
 
                     insertDocument(cloudantDb, ddoc, resultInsert => {
                         resolve(resultInsert)
