@@ -10,7 +10,10 @@ app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
 var cors = require('cors');
 
 // use it before all route definitions
-app.use(cors({ origin: 'http://localhost:8100' }));
+app.use(cors())
+
+
+
 
 let Promise = require('bluebird');
 
@@ -20,6 +23,20 @@ let params = {
     "dbname": "temis",
     "password": "dad588d54bf4cbd5f8785c7d2f0ab8a5f156d341b89ee57ec87bc61116e6671e"
 };
+
+
+app.get('/call', function (req, res) {
+    let query = {
+        selector: {
+        }
+    };
+
+    let request = getDocument(params, query)
+    request.then(function (result) {
+        result.sort(dynamicSort("-priority"));
+        res.send(result);
+    })
+});
 
 app.get('/occurrence', function (req, res) {
     let query = {
@@ -69,9 +86,9 @@ app.post('/call', function (req, res) {
     })
 });
 
-// http://localhost:3000/call/status/4a29f354ab1f2c417ba7149d67f9fefb/SOLVED
-// http://localhost:3000/call/status/4a29f354ab1f2c417ba7149d67f9fefb/PENDING
-// http://localhost:3000/call/status/4a29f354ab1f2c417ba7149d67f9fefb/IN PROGRESS
+// http://localhost:3000/call/status/4a29f354ab1f2c417ba7149d67f9fefb/1
+// http://localhost:3000/call/status/4a29f354ab1f2c417ba7149d67f9fefb/2
+// http://localhost:3000/call/status/4a29f354ab1f2c417ba7149d67f9fefb/3
 
 
 app.post('/call/status/:_id/:status', function (req, res) {
@@ -173,7 +190,7 @@ function insert(params, ddoc) {
                     }
 
                     ddoc.priority = priority;
-                    ddoc.status = 1;
+                    ddoc.status = 0;
 
                     insertDocument(cloudantDb, ddoc, resultInsert => {
                         resolve(resultInsert)
@@ -468,6 +485,8 @@ function checkForBXCreds(params) {
         }
     }
 }
+
+app.use(express.static(__dirname + '/front-user/www/'));
 
 var port = process.env.PORT || 3000
 app.listen(port, function () {
