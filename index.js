@@ -5,13 +5,12 @@ var bodyParser = require('body-parser');
 app.use(bodyParser.json()); // support json encoded bodies
 app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
 
-var port = process.env.PORT || 3000
-app.listen(port, function () {
-    console.log("To view your app, open this link in your browser: http://localhost:" + port);
-});
 
-app.use(express.bodyParser());
+// Add headers
+var cors = require('cors');
 
+// use it before all route definitions
+app.use(cors({ origin: 'http://localhost:8100' }));
 
 let Promise = require('bluebird');
 
@@ -31,6 +30,7 @@ app.get('/occurrence', function (req, res) {
 
     let request = getDocument(params, query)
     request.then(function (result) {
+        result.sort(dynamicSort("-priority"));
         res.send(result);
     })
 });
@@ -44,6 +44,7 @@ app.get('/complaint', function (req, res) {
 
     let request = getDocument(params, query)
     request.then(function (result) {
+        result.sort(dynamicSort("-priority"));
         res.send(result);
     })
 });
@@ -71,6 +72,7 @@ app.post('/call', function (req, res) {
 // http://localhost:3000/call/status/4a29f354ab1f2c417ba7149d67f9fefb/SOLVED
 // http://localhost:3000/call/status/4a29f354ab1f2c417ba7149d67f9fefb/PENDING
 // http://localhost:3000/call/status/4a29f354ab1f2c417ba7149d67f9fefb/IN PROGRESS
+
 
 app.post('/call/status/:_id/:status', function (req, res) {
     var _id = req.params._id;
@@ -104,10 +106,6 @@ app.post('/call/veracity/:_id/:veracity', function (req, res) {
 });
 
 
-
-
-
-
 function insert(params, ddoc) {
     return new Promise(function (resolve, reject) {
         let conn = initConn(params);
@@ -120,13 +118,103 @@ function insert(params, ddoc) {
 
 
 
+            let query = {
+                selector: {
+                    type: "occurrence"
+                }
+            };
 
-            insertDocument(cloudantDb, ddoc, result => {
-                resolve(result)
-            });
+            let calls = [];
+
+            let request = getDocument(params, query)
+            request.then(function (result) {
+
+                calls = result;
+
+                query = {
+                    selector: {
+                        type: "complaint"
+                    }
+                };
+
+
+                request = getDocument(params, query)
+                request.then(function (resultComplaint) {
+                    for (let complaint of resultComplaint) {
+                        calls.push(complaint);
+                    }
+
+                    let countDistance = 0;
+                    for (let call of calls) {
+                        if (distanceInKmBetweenEarthCoordinates(call.lat, call.lng, ddoc.lat, ddoc.lng) < 5) {
+                            countDistance++;
+                        };
+                    }
+
+                    let sadness = 50;
+                    let fear = 50;
+
+                    if (sadness >= 50) {
+                        countDistance++;
+                    }
+
+                    if (fear >= 50) {
+                        countDistance++;
+                        countDistance++;
+                    }
+
+                    let priority = 0;
+                    if (countDistance > 5) {
+                        priority = 3;
+                    } else if (countDistance > 3 && countDistance <= 5) {
+                        priority = 2;
+                    } else {
+                        priority = 1;
+                    }
+
+                    ddoc.priority = priority;
+                    ddoc.status = 1;
+
+                    insertDocument(cloudantDb, ddoc, resultInsert => {
+                        resolve(resultInsert)
+                    });
+                });
+            })
         });
     });
 }
+
+function dynamicSort(property) {
+    var sortOrder = 1;
+    if (property[0] === "-") {
+        sortOrder = -1;
+        property = property.substr(1);
+    }
+    return function (a, b) {
+        var result = (a[property] < b[property]) ? -1 : (a[property] > b[property]) ? 1 : 0;
+        return result * sortOrder;
+    }
+}
+
+function degreesToRadians(degrees) {
+    return degrees * Math.PI / 180;
+}
+
+function distanceInKmBetweenEarthCoordinates(lat1, lon1, lat2, lon2) {
+    var earthRadiusKm = 6371;
+
+    var dLat = degreesToRadians(lat2 - lat1);
+    var dLon = degreesToRadians(lon2 - lon1);
+
+    lat1 = degreesToRadians(lat1);
+    lat2 = degreesToRadians(lat2);
+
+    var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.sin(dLon / 2) * Math.sin(dLon / 2) * Math.cos(lat1) * Math.cos(lat2);
+    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return earthRadiusKm * c;
+}
+
 
 function updateStatus(params, ddoc) {
     return new Promise(function (resolve, reject) {
@@ -153,8 +241,6 @@ function updateStatus(params, ddoc) {
                     resolve(result)
                 });
             })
-
-
         });
     });
 }
@@ -383,3 +469,7 @@ function checkForBXCreds(params) {
     }
 }
 
+var port = process.env.PORT || 3000
+app.listen(port, function () {
+    console.log("To view your app, open this link in your browser: http://localhost:" + port);
+});

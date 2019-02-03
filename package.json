@@ -15,6 +15,7 @@
         "async": "^2.6.1",
         "bluebird": "^3.5.3",
         "body-parser": "^1.18.3",
+        "cors": "^2.8.5",
         "express": "^4.16.4",
         "hh-mm-ss": "^1.2.0",
         "ibm-cos-sdk": "^1.4.1",
